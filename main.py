@@ -1,4 +1,4 @@
-from agent import agent
+from agent import run_agent
 from dotenv import load_dotenv
 from state import initialize_state, record_action, record_observation, update_status, build_context
 from tools import calculator, write_file, calculate_revenue
@@ -12,7 +12,7 @@ load_dotenv()
 
 goal = input("User : ")
 
-output = agent(goal)
+output = run_agent(goal)
 
 
 print(f"Agent : {output}")

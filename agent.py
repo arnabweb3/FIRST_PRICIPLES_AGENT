@@ -1,100 +1,47 @@
 import json
-from tools import calculator
-from google import genai
-from google.genai.types import GenerateContentConfig
+# from tools import calculator
+# from google import genai
+# from google.genai.types import GenerateContentConfig
 from state import initialize_state, record_action, record_observation, update_status, build_context
-from tools import write_file,read_file,calculate_revenue
+# from tools import write_file,read_file,calculate_revenue
 from tool_registry import execute_tool
+from decision_engine import get_decision
 
-def agent(goal):
+def run_agent(goal):
 
     state = initialize_state(goal=goal)
 
-    prompt = f"""
-        You are an AI Agent
-
-        Goal : {goal}
-
-        Available actions:
-        1. calculator
-        2. calculate_revenue
-        3. read_file
-        4. write_file
-        5. respond
-
-        Decide what action is needed
-
-        If calculation is required then use calculator
-        If a revenue specific calculation is required then use calculate_revenue
-        If reading content from a file is required then use read_file
-        If writing content to a file is required then use write_file
-        Otherwise use respond
-
-        Return ONLY valid json
-
-        Format : {{
-            "action" : "calculator or respond",
-            "arguments" : {{
-                "a" : 0,
-                "b" : 0,
-                "operation" :  "multiply"
-            
-            }},
-            "response" : null
-        }}
-
-        OR
-
-        Format : {{
-            "action" : "calculate_revenue or respond",
-            "arguments" : {{
-                "filepath" : "data/sales.csv"
-            
-            }},
-            "response" : null
-        }}
-
-        OR
-
-        Format : {{
-            "action" : "read_file or respond",
-            "arguments" : {{
-                "filepath" : "data/result.txt"
-            
-            }},
-            "response" : null
-        }}
-
-        OR
-
-        Format : {{
-            "action" : "write_file or respond",
-            "arguments" : {{
-                "filepath" : "data/result.txt",
-                "content" : "provided by user prompt"
-            
-            }},
-            "response" : null
-        }}
-        
-
-    
-    """
-    llm = genai.Client()
-
-    decision_response = llm.models.generate_content(
-        model="gemini-3.5-flash-lite",
-        contents=prompt,
-        config=GenerateContentConfig(
-            temperature=0
-        )
+    decision = get_decision(
+        user_goal=goal
     )
 
 
+    action = decision['action'] # type: ignore
+    arguments = decision['arguments'] # type: ignore
 
-    decision = json.loads(decision_response.text) # type: ignore
+
+    print(f"Decision : {decision}")
+
+    if action == 'respond':
+        return {
+            "success" : True,
+            "type" : 'response',
+            "result" : arguments['response'] # type: ignore
+        }
+
+    
+    result = execute_tool(tool_name=action , arguments=arguments)
 
 
+    return {
+        "success" : True,
+        "type" : "tool_execution",
+        "result" : result['result'],
+        "error" :  result['error']
+    }
+
+
+   
     record_action(
         state=state,
         tool_name=decision['action'],
@@ -102,7 +49,6 @@ def agent(goal):
     )
 
 
-    result = execute_tool(tool_name=decision['action'] , arguments=decision['arguments'])
 
     record_observation(
         state=state,
