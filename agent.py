@@ -1,9 +1,5 @@
 import json
-# from tools import calculator
-# from google import genai
-# from google.genai.types import GenerateContentConfig
 from state import initialize_state, record_action, record_observation, update_status, build_context
-# from tools import write_file,read_file,calculate_revenue
 from tool_registry import execute_tool
 from decision_engine import get_decision
 
@@ -11,63 +7,93 @@ def run_agent(goal):
 
     state = initialize_state(goal=goal)
 
-    decision = get_decision(
-        user_goal=goal
-    )
+    max_iteration = 5
+
+    for iteration in range(max_iteration):
+
+        print(f"\n ---- Iteration {iteration + 1} ----\n")
+
+        observations = state['observations']
+        
+        decision = get_decision(
+            user_goal=goal,
+            observations=observations
+        ) # type: ignore
+
+        print(f"Decision : {decision}")
+
+        if not isinstance(decision, dict):
+            update_status(state=state,status="failed")
+            break
+
+        action = decision.get("action")
+        arguments = decision.get("arguments", {})
 
 
-    action = decision['action'] # type: ignore
-    arguments = decision['arguments'] # type: ignore
+
+        if action == 'finish':
+
+            final_answer = arguments.get("final_answer")
+
+            update_status(
+                state=state,
+                status="completed",
+                final_answer=final_answer
+            )
+
+            break
+
+          
 
 
-    print(f"Decision : {decision}")
+        if action == "ask_user":
+            question = arguments.get("question")
+            update_status(state=state, status="waiting for user")
+            print(f"Clarification required : {question}")
+            break
 
-    if action == 'respond':
-        return {
-            "success" : True,
-            "type" : 'response',
-            "result" : arguments['response'] # type: ignore
-        }
-
+         
+        record_action(
+            state=state,
+            tool_name=action,
+            arguments=arguments,
+        )
     
-    result = execute_tool(tool_name=action , arguments=arguments)
+        result = execute_tool(tool_name=action , arguments=arguments)
+
+         
+        record_observation(
+            state=state,
+            tool_name=action,
+            result=result,
+            success=result['success']
+        )
+
+        print(f"Tool result : {result}")
+
+        # return {
+        #     "success" : True,
+        #     "type" : "tool_execution",
+        #     "result" : result['result'],
+        #     "error" :  result['error']
+        # }
+
+    else:
+        update_status(state=state, status="Max iteration reached")
 
 
-    return {
-        "success" : True,
-        "type" : "tool_execution",
-        "result" : result['result'],
-        "error" :  result['error']
-    }
+    return state
+ 
+    # update_status(
+    #     state=state,
+    #     status="completed",
+    #     final_answer=str(result)
+    # )
 
 
-   
-    record_action(
-        state=state,
-        tool_name=decision['action'],
-        arguments=decision['arguments'],
-    )
+    # print(f"Final State : {state} \n")
 
-
-
-    record_observation(
-        state=state,
-        tool_name=decision['action'],
-        result=result,
-        success=result['success']
-    )
-
-
-    update_status(
-        state=state,
-        status="completed",
-        final_answer=str(result)
-    )
-
-
-    print(f"Final State : {state} \n")
-
-    return result
+    # return result
 
 
 

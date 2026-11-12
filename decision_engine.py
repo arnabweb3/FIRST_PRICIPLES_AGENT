@@ -23,7 +23,7 @@ def get_tool_descriptions():
     return descriptions
 
 
-def get_decision(user_goal):
+def get_decision(user_goal,observations):
 
     available_tools = get_tool_descriptions()
 
@@ -37,12 +37,21 @@ def get_decision(user_goal):
     AVAILABLE TOOLS:
     {json.dumps(available_tools, indent=2)}
 
-    Your task:
-    1. Decide whether a tool is required.
-    2. If a tool is required, select exactly one tool.
-    3. Provide all required arguments.
-    4. If no tool is required, respond directly.
 
+    PREVIOUS OBSERVATIONS:
+    {json.dumps(observations, indent=2)}
+
+
+    Decide the next action
+
+    Rules:
+    1. Select exactly one available tool if more work is required.
+    2. Use previous observations when deciding the next action.
+    3. Do not repeat successful actions unnecessarily.
+    4. If the goal is fully completed, select finish.
+    5. Never invent file paths or tool names.
+    6. If required information is missing, select ask_user.
+    
     Return ONLY valid JSON.
 
     For tool execution, use:
@@ -52,18 +61,25 @@ def get_decision(user_goal):
         "reason": "short explanation"
     }}
 
-    For a direct response, use:
+    For completion:
     {{
-        "action": "respond",
+        "action": "finish",
         "arguments": {{
-            "response": "Your answer"
+            "final_answer": "Task completion summary"
         }},
-        "reason": "short explanation"
+        "reason": "Goal achieved"
     }}
 
-    Never invent file paths.
-    Never select tools that are not available.
-    Do not return Markdown or code fences.
+    For clarification:
+    {{
+        "action": "ask_user",
+        "arguments": {{
+            "question": "Clarification question"
+        }},
+        "reason": "Required information is missing"
+    }}
+
+
 """
 
     response = client.models.generate_content(
