@@ -1,6 +1,7 @@
 from planner import create_plan
 from tool_registry import execute_tool
-
+from plan_validator import validate_plan
+from state import initialize_state, record_action, record_observation, update_status, build_context
 import re
 
 def resolve_references(arguments, task_outputs):
@@ -55,7 +56,18 @@ def resolve_references(arguments, task_outputs):
 
 
 def execute_plan(user_goal):
+    state = initialize_state(goal=user_goal)
+
     plan = create_plan(user_goal=user_goal)
+
+    errors = validate_plan(plan=plan)
+
+    if errors:
+        return {
+            "status" : "invalid_plan",
+            "errors" : errors,
+            "plan" : plan
+        }
 
 
     if plan.get('status') != "ready":
@@ -100,6 +112,12 @@ def execute_plan(user_goal):
 
 
 
+        record_action(
+            state=state,
+            tool_name=task['tool'],
+            arguments=arguments
+        )
+
 
 
         result = execute_tool(
@@ -108,6 +126,13 @@ def execute_plan(user_goal):
         )
 
         print(f"Result : {result}")
+
+        record_observation(
+            state=state,
+            tool_name=task['tool'],
+            result=result,
+            success=result['success']
+        )
 
 
         if result['success']:
@@ -119,6 +144,12 @@ def execute_plan(user_goal):
  
         else:
 
+            update_status(
+                state=state,
+                status='failed',
+                final_answer=result['error']
+            )
+
             failed_tasks.append( 
                 {
                     'task_id' : task['task_id'],
@@ -128,6 +159,12 @@ def execute_plan(user_goal):
 
             break
 
+    update_status(
+        state,
+        "completed",
+        "All planned tasks completed successfully."
+    )
+
 
     return {
         "status" : (
@@ -135,6 +172,7 @@ def execute_plan(user_goal):
             if len(completed_tasks) == len(plan['tasks'])
             else "failed"
         ),
+        "state" : state,
         "plan" : plan,
         "completed_tasks" : completed_tasks,
         "failed_tasks" : failed_tasks,

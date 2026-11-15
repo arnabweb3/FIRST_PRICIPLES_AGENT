@@ -1,0 +1,5 @@
+Sales Analysis Report
+
+Total Revenue: 457000.0
+Revenue By Product: {'Laptop': 330000.0, 'Mouse': 28000.0, 'Keyboard': 27000.0, 'Monitor': 72000.0}
+Highest-Revenue Product: {'product': 'Laptop', 'revenue': 330000.0}

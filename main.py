@@ -12,6 +12,16 @@ load_dotenv()
 
 goal = input("User : ")
 
+
+# goal = """
+# Analyze data/sales.csv.
+
+# 1. Calculate total revenue.
+# 2. Calculate revenue by product.
+# 3. Identify the highest-revenue product.
+# 4. Save a complete report in output/sales_analysis.txt.
+# """
+
 # output = run_agent(goal)
 output = execute_plan(goal)
 
