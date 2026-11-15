@@ -1,4 +1,4 @@
-from tools import calculator,calculate_revenue,write_file,read_file
+from tools import calculator,calculate_revenue,write_file,read_file,revenue_by_product, get_highest_revenue_product
 
 
 
@@ -22,6 +22,16 @@ TOOL_REGISTRY = {
         "function" : read_file,
         "arguments" : ["filepath"],
         "description" : "Read the contents from a specific file"
+    },
+    "revenue_by_product" : {
+        "function" : revenue_by_product,
+        "arguments" : ['filepath'],
+        "description" : "Calculate revenue of specific products"
+    },
+    "get_highest_revenue_product" : {
+        "function" : get_highest_revenue_product,
+        "arguments" : ['product_revenue'],
+        "description" : "Identify the product category with highest revenue"
     }
 }
 
