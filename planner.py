@@ -112,6 +112,18 @@ When generating a report:
 5. Set depends_on to include every task whose
    output is used in the report.
 
+DATABASE QUERY RULES:
+- Use only columns defined in the database schema.
+- The sales table has:
+  order_id, customer, product, quantity, unit_price, region.
+- There is no revenue column.
+- Calculate revenue using quantity * unit_price.
+- To calculate total revenue by product, use:
+  SELECT product,
+         SUM(quantity * unit_price) AS total_revenue
+  FROM sales
+  GROUP BY product;
+
 TASK DEPENDENCY RULES:
 
 - A task can execute only after all its dependencies

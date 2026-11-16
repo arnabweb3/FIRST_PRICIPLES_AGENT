@@ -1,13 +1,16 @@
 from agent import run_agent
 from dotenv import load_dotenv
 from state import initialize_state, record_action, record_observation, update_status, build_context
-from tools import calculator, write_file, calculate_revenue
+from tools import calculator, write_file, calculate_revenue, database_query, search_web
 from plan_executor import execute_plan
+
+
 
 load_dotenv()
 
 
-# print(calculate_revenue("data/sales.csv"))
+
+
 
 
 goal = input("User : ")

@@ -1,5 +1,7 @@
+import os
 import csv
-
+import sqlite3
+from tavily import TavilyClient
 
 def calculator(a,b,operation):
     
@@ -23,7 +25,7 @@ def calculator(a,b,operation):
 
 
 def write_file(filepath, content):
-    with open(filepath, "w") as file:
+    with open(filepath, "w", encoding="utf-8") as file:
         file.write(str(content))
 
     return f"File saved successfully: {filepath}" 
@@ -66,9 +68,6 @@ def get_highest_revenue_product(product_revenue):
     }
 
 
-
-
-
 def revenue_by_product(filepath):
 
     product_revenue = {}
@@ -91,3 +90,72 @@ def revenue_by_product(filepath):
             )
 
     return product_revenue
+
+
+def database_query(query):
+
+    normalized_query = query.strip().lower()
+
+    if not normalized_query.startswith("select"):
+        raise ValueError("Only SELECT queries are allowed")
+
+
+    connection = sqlite3.connect(
+        "file:data/sales.db?mode=ro",
+        uri=True
+    )
+
+    try:
+        cursor = connection.cursor()
+
+        cursor.execute(query)
+
+
+        columns = [
+            description[0] for description in cursor.description
+        ]
+
+
+        rows = cursor.fetchall()
+
+        return {
+            "columns" : columns,
+            "rows" : rows,
+            "row_count" : len(rows)
+        }
+
+    finally:
+        connection.close()
+
+
+
+def search_web(query):
+    api_key = os.getenv('TAVILY_API_KEY')
+
+    if not api_key:
+        raise ValueError("TAVILY_API_KEY is missing")
+
+    client = TavilyClient(api_key=api_key)
+
+    response = client.search(
+        query=query,
+        max_results=5
+    )
+
+    results = []
+
+    for item in response.get('results', []):
+
+        results.append(
+            {
+                "title" : item.get('title'),
+                "url" : item.get("url"),
+                "content" : item.get('content')
+            }
+        )
+
+    return {
+        "query" : query,
+        "results" : results,
+        "results_count" : len(results)
+    }

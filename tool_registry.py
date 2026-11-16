@@ -1,4 +1,4 @@
-from tools import calculator,calculate_revenue,write_file,read_file,revenue_by_product, get_highest_revenue_product
+from tools import calculator,calculate_revenue,write_file,read_file,revenue_by_product,get_highest_revenue_product, database_query, search_web
 
 
 
@@ -32,6 +32,16 @@ TOOL_REGISTRY = {
         "function" : get_highest_revenue_product,
         "arguments" : ['product_revenue'],
         "description" : "Identify the product category with highest revenue"
+    },
+    "database_query" : {
+        "function" :  database_query,
+        "arguments" : ['query'],
+        "description" : "Fetch records from the sales SQLite database"
+    },
+    "search_web" : {
+        "function" :  search_web,
+        "arguments" : ['query'],
+        "description" : "Retrieve relevant data from the internet"
     }
 }
 
