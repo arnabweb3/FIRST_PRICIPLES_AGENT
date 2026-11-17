@@ -1,0 +1,1 @@
+Total Sales Revenue: {'columns': ['total_revenue'], 'rows': [(363900.0,)], 'row_count': 1}

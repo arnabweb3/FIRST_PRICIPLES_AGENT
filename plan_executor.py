@@ -3,6 +3,7 @@ from tool_registry import execute_tool
 from plan_validator import validate_plan
 from state import initialize_state, record_action, record_observation, update_status, build_context
 import re
+import json
 
 def resolve_references(arguments, task_outputs):
 
@@ -56,6 +57,8 @@ def resolve_references(arguments, task_outputs):
 
 
 def execute_plan(user_goal):
+    MAX_ITERATIONS = 10
+
     state = initialize_state(goal=user_goal)
 
     plan = create_plan(user_goal=user_goal)
@@ -84,7 +87,19 @@ def execute_plan(user_goal):
     task_outputs = {}
 
 
+    iteration_count = 0
+    executed_calls = set()
+
+
+    
+
     for task in plan['tasks']:
+        if iteration_count >= MAX_ITERATIONS:
+            status = "max_iterations_reached"
+            break
+
+        iteration_count += 1
+
         print(
             f"\n Executing task : {task['description']} \n"
         )
@@ -119,12 +134,45 @@ def execute_plan(user_goal):
         )
 
 
+        call_signature = (
+            task['tool'],
+            json.dumps(arguments, sort_keys = True, default=str)
+        )
+
+        if call_signature in executed_calls:
+            status = 'loop_detected'
+
+            failed_tasks.append(
+                {
+                    "task_id" : task['task_id'],
+                    "error" : "Repeated tool call detected"
+                }
+            )
+
+            break
+
+        executed_calls.add(call_signature)
+
+
 
         result = execute_tool(
             tool_name=task['tool'],
             arguments=arguments
         )
 
+        if not result['success']:
+            failed_tasks.append(
+                { 
+                    "task_id" : task['task_id'],
+                    "error" : result['error']
+                }
+            )
+
+            status = "failed"
+            break
+
+        
+        
         print(f"Result : {result}")
 
         record_observation(
@@ -141,7 +189,7 @@ def execute_plan(user_goal):
 
             task_outputs[task['task_id']] = result['result']
 
- 
+
         else:
 
             update_status(
@@ -166,12 +214,18 @@ def execute_plan(user_goal):
     )
 
 
+    if failed_tasks:
+        status = "failed"
+    elif len(completed_tasks) == len(plan['tasks']):
+        status = "completed"
+
+    elif status == "running":
+        status = "blocked"
+
+
+
     return {
-        "status" : (
-            "completed"
-            if len(completed_tasks) == len(plan['tasks'])
-            else "failed"
-        ),
+        "status" : status,
         "state" : state,
         "plan" : plan,
         "completed_tasks" : completed_tasks,

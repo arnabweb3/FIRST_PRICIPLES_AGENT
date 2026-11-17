@@ -32,6 +32,33 @@ output = execute_plan(goal)
 print(f"Agent : {output}")
 
 
+output_status = output['status']
+
+final_answer = ""
+
+if output_status == "completed":
+    final_answer = "All planned tasks are completed"
+
+elif output_status == "failed":
+    final_answer = "Execution failed. Check the failed task details."
+
+elif output_status == "loop_detected":
+    final_answer = "Execution stopped because a repeated tool call was detected."
+
+elif output_status == "max_iterations_reached":
+    final_answer = "Execution stopped after reaching the iteration limit."
+
+else:
+    final_answer = "Execution could not complete all planned tasks."
+    
+
+# update_status(
+#     output['state'],
+#     output_status,
+#     final_answer
+# )
+
+
 # state  = initialize_state(goal=goal)
 
 # record_action(
