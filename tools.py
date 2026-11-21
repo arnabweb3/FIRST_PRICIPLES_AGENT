@@ -159,3 +159,32 @@ def search_web(query):
         "results" : results,
         "results_count" : len(results)
     }
+
+
+
+
+def is_retryable_error(error):
+    
+    message = str(error).lower()
+
+    retryable_errors = [
+        "timeout",
+        "timed out",
+        "connection reset",
+        "connection error",
+        "temporarily unavailable",
+        "500",
+        "429",
+        "502",
+        "503",
+        "504"
+    ]
+
+
+    if isinstance(error , (TimeoutError, ConnectionError)):
+        return True
+
+    return any(
+        term in message
+        for term in retryable_errors
+    )

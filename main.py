@@ -8,11 +8,6 @@ from plan_executor import execute_plan
 
 load_dotenv()
 
-
-
-
-
-
 goal = input("User : ")
 
 

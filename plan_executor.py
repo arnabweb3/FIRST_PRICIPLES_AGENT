@@ -4,6 +4,9 @@ from plan_validator import validate_plan
 from state import initialize_state, record_action, record_observation, update_status, build_context
 import re
 import json
+import time
+import random
+from tool_registry import TOOL_REGISTRY
 
 def resolve_references(arguments, task_outputs):
 
@@ -234,6 +237,60 @@ def execute_plan(user_goal):
     }
 
         
+def execute_with_retry(
+        tool_name,
+        arguments,
+        max_attempts = 3,
+        base_delay = 1,
+        execute_fn=None
+):
+    if execute_fn is None:
+        execute_fn = execute_tool
+    
+    
+    tool_config = TOOL_REGISTRY[tool_name]
 
+    if not tool_config.get("retry_safe", False):
+        return execute_tool(
+            tool_name=tool_name,
+            arguments=arguments
+        )
         
+    for attempt in range(1, max_attempts + 1):
 
+        print(
+            f"Attempt {attempt}/{max_attempts}: "
+            f"{tool_name}"
+        )
+
+        # result = execute_tool(
+        #     tool_name=tool_name,
+        #     arguments=arguments
+        # )
+
+        result = execute_fn(
+            tool_name=tool_name,
+            arguments=arguments
+        )
+
+        # Stop immediately if successful
+        if result["success"]:
+            return result
+
+        # Do not retry permanent errors
+        if not result.get("retryable", False):
+            return result
+
+        # Stop if attempts are exhausted
+        if attempt == max_attempts:
+            return result
+
+        # Exponential backoff with jitter
+        delay = base_delay * (2 ** (attempt - 1))
+        delay += random.uniform(0, 0.5)
+
+        print(f"Temporary error. Retrying in {delay:.2f} seconds.")
+
+        time.sleep(delay)
+
+    return result

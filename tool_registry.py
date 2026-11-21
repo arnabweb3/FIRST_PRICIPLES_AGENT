@@ -1,6 +1,4 @@
-from tools import calculator,calculate_revenue,write_file,read_file,revenue_by_product,get_highest_revenue_product, database_query, search_web
-
-
+from tools import calculator,calculate_revenue,write_file,read_file,revenue_by_product,get_highest_revenue_product, database_query, search_web, is_retryable_error
 
 TOOL_REGISTRY = {
     "calculator" : {
@@ -16,7 +14,8 @@ TOOL_REGISTRY = {
     "write_file" : {
         "function" : write_file,
         "arguments" : ["filepath","content"],
-        "description" : "Write the provided content in a specific file"
+        "description" : "Write the provided content in a specific file",
+        "retry_safe" : True
     },
     "read_file" : {
         "function" : read_file,
@@ -36,12 +35,14 @@ TOOL_REGISTRY = {
     "database_query" : {
         "function" :  database_query,
         "arguments" : ['query'],
-        "description" : "Fetch records from the sales SQLite database"
+        "description" : "Fetch records from the sales SQLite database",
+        "retry_safe" : True
     },
     "search_web" : {
         "function" :  search_web,
         "arguments" : ['query'],
-        "description" : "Retrieve relevant data from the internet"
+        "description" : "Retrieve relevant data from the internet",
+        "retry_safe" : True
     }
 }
 
@@ -97,10 +98,18 @@ def execute_tool(tool_name,arguments):
             "result" : result,
             "error" : None
         }
-    except Exception as e:
+    except Exception as error:
         return {
-            "success" : False,
-            "tool" : tool_name,
-            "result" : None,
-            "error" : str(e)
+            "success": False,
+            "tool": tool_name,
+            "result": None,
+            "error": str(error),
+            "error_type": type(error).__name__,
+            "retryable": is_retryable_error(error)
         }
+        # return {
+        #     "success" : False,
+        #     "tool" : tool_name,
+        #     "result" : None,
+        #     "error" : str(e)
+        # }
