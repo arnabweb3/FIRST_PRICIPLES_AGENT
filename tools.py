@@ -2,6 +2,10 @@ import os
 import csv
 import sqlite3
 from tavily import TavilyClient
+from tool_safety import (
+    check_tool_permission,
+    validate_output_path
+)
 
 def calculator(a,b,operation):
     
@@ -105,7 +109,21 @@ def database_query(query):
         uri=True
     )
 
+    def authorize(action, arg1, arg2, database, trigger):
+        allowed_actions = {
+            sqlite3.SQLITE_SELECT,
+            sqlite3.SQLITE_READ,
+            sqlite3.SQLITE_FUNCTION,
+        }
+
+        if action in allowed_actions:
+            return sqlite3.SQLITE_OK
+
+        return sqlite3.SQLITE_DENY
+
     try:
+        connection.set_authorizer(authorizer_callback=authorize)
+
         cursor = connection.cursor()
 
         cursor.execute(query)

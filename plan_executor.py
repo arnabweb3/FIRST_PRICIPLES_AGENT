@@ -160,7 +160,8 @@ def execute_plan(user_goal):
 
         result = execute_tool(
             tool_name=task['tool'],
-            arguments=arguments
+            arguments=arguments,
+            tool_registry=TOOL_REGISTRY
         )
 
         if not result['success']:
@@ -253,7 +254,8 @@ def execute_with_retry(
     if not tool_config.get("retry_safe", False):
         return execute_tool(
             tool_name=tool_name,
-            arguments=arguments
+            arguments=arguments,
+            tool_registry=TOOL_REGISTRY
         )
         
     for attempt in range(1, max_attempts + 1):

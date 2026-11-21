@@ -3,12 +3,23 @@ from dotenv import load_dotenv
 from state import initialize_state, record_action, record_observation, update_status, build_context
 from tools import calculator, write_file, calculate_revenue, database_query, search_web
 from plan_executor import execute_plan
-
+from tool_safety import check_tool_permission,validate_output_path
 
 
 load_dotenv()
 
-goal = input("User : ")
+
+
+print(database_query("SELECT * FROM sales"))
+
+print(database_query(
+    "DELETE FROM sales"
+))
+
+
+# goal = input("User : ")
+# output = execute_plan(goal)
+# print(f"Agent : {output}")
 
 
 # goal = """
@@ -21,10 +32,8 @@ goal = input("User : ")
 # """
 
 # output = run_agent(goal)
-output = execute_plan(goal)
 
 
-print(f"Agent : {output}")
 
 
 output_status = output['status']
