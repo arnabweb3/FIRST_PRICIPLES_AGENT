@@ -7,6 +7,8 @@ import json
 import time
 import random
 from tool_registry import TOOL_REGISTRY
+from logger_config import logger
+from execution_tracker import record_execution
 
 def resolve_references(arguments, task_outputs):
 
@@ -157,6 +159,13 @@ def execute_plan(user_goal):
         executed_calls.add(call_signature)
 
 
+        record_execution(
+            "tool_started",
+            {
+                "tool": task['tool'],
+                "arguments": arguments
+            }
+        )
 
         result = execute_tool(
             tool_name=task['tool'],
@@ -187,6 +196,14 @@ def execute_plan(user_goal):
         )
 
 
+        record_execution(
+            "tool_completed",
+            {
+                "tool": task['tool'],
+                "success": result["success"]
+            }
+        )
+        
         if result['success']:
 
             completed_tasks.append(task['task_id'])
@@ -210,6 +227,8 @@ def execute_plan(user_goal):
             )
 
             break
+
+    
 
     update_status(
         state,
@@ -260,6 +279,10 @@ def execute_with_retry(
         
     for attempt in range(1, max_attempts + 1):
 
+        logger.info(
+            f"Attempt {attempt}/{max_attempts}: {tool_name}"
+        )
+
         print(
             f"Attempt {attempt}/{max_attempts}: "
             f"{tool_name}"
@@ -277,19 +300,30 @@ def execute_with_retry(
 
         # Stop immediately if successful
         if result["success"]:
+            logger.info(
+                f"Tool succeeded after attempt {attempt}: {tool_name}"
+            )
             return result
 
         # Do not retry permanent errors
         if not result.get("retryable", False):
+            logger.warning(
+                f"Retryable error for {tool_name}: {result['error']}"
+            )
             return result
 
         # Stop if attempts are exhausted
         if attempt == max_attempts:
+            logger.error(
+                f"All retry attempts exhausted for {tool_name}"
+            )
             return result
 
         # Exponential backoff with jitter
         delay = base_delay * (2 ** (attempt - 1))
         delay += random.uniform(0, 0.5)
+
+       
 
         print(f"Temporary error. Retrying in {delay:.2f} seconds.")
 

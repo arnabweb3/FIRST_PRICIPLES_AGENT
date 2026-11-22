@@ -2,7 +2,7 @@
 import json
 
 from decision_engine import client, get_tool_descriptions
-
+from logger_config import logger
 
 MODEL = "gemini-3.5-flash-lite"
 
@@ -181,5 +181,10 @@ For missing information, use:
     )
 
     plan = json.loads(response.text)
+
+    logger.info(
+        f"Plan generated with {len(plan['tasks'])} tasks"
+    )
+
 
     return plan

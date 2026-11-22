@@ -6,6 +6,9 @@ from tool_safety import (
     validate_output_path
 )
 
+
+from logger_config import logger
+
 TOOL_REGISTRY = {
     "calculator" : {
         "function" : calculator,
@@ -106,6 +109,10 @@ def validate_tool_call(tool_name,arguments):
 
 def execute_tool(tool_name, arguments, approved=False, tool_registry=None):
 
+    logger.info(
+        f"Tool execution requested: {tool_name}"
+    )
+
     try:
         # Step 1: Validate tool name and arguments
         validate_tool_call(tool_name, arguments)
@@ -121,6 +128,10 @@ def execute_tool(tool_name, arguments, approved=False, tool_registry=None):
         )
 
         if not permission_result["allowed"]:
+            logger.info(
+                f"Permission denied: {tool_name}"
+            )
+
             return {
                 "success": False,
                 "tool": tool_name,
@@ -136,6 +147,10 @@ def execute_tool(tool_name, arguments, approved=False, tool_registry=None):
             path = arguments.get("path")
 
             if not path or not validate_output_path(path):
+                logger.warning(
+                    f"Invalid output path: {path}"
+                )
+
                 return {
                     "success": False,
                     "tool": tool_name,
@@ -148,8 +163,18 @@ def execute_tool(tool_name, arguments, approved=False, tool_registry=None):
         # Step 4: Retrieve registered tool function
         tool_function = TOOL_REGISTRY[tool_name]["function"]
 
+
+        logger.info(
+            f"Executing tool: {tool_name}"
+        )
+
         # Step 5: Execute tool
         result = tool_function(**arguments)
+
+
+        logger.info(
+            f"Tool executed successfully: {tool_name}"
+        )
 
         return {
             "success": True,
@@ -161,6 +186,10 @@ def execute_tool(tool_name, arguments, approved=False, tool_registry=None):
 
     except Exception as error:
 
+        logger.exception(
+            f"Tool execution failed: {tool_name}"
+        )
+
         return {
             "success": False,
             "tool": tool_name,
@@ -169,10 +198,3 @@ def execute_tool(tool_name, arguments, approved=False, tool_registry=None):
             "error_type": type(error).__name__,
             "retryable": is_retryable_error(error)
         }
-
-        # return {
-        #     "success" : False,
-        #     "tool" : tool_name,
-        #     "result" : None,
-        #     "error" : str(e)
-        # }
