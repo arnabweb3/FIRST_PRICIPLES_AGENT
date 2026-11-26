@@ -123,7 +123,7 @@ def execute_tool(tool_name, arguments, approved=False, tool_registry=None):
         # Step 2: Check tool permissions
         permission_result = check_tool_permission(
             tool_name,
-            TOOL_REGISTRY,
+            tool_registry,
             approved=approved
         )
 
@@ -144,7 +144,7 @@ def execute_tool(tool_name, arguments, approved=False, tool_registry=None):
         # Step 3: Validate file output path
         if tool_name == "write_file":
 
-            path = arguments.get("path")
+            path = arguments.get("filepath")
 
             if not path or not validate_output_path(path):
                 logger.warning(

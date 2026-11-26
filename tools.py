@@ -58,6 +58,20 @@ def calculate_revenue(filepath):
 
 def get_highest_revenue_product(product_revenue):
 
+     # Handle database_query output
+    if isinstance(product_revenue, dict) and "rows" in product_revenue:
+
+        product_revenue = {
+            row[0]: row[1]
+            for row in product_revenue["rows"]
+        }
+
+    if not isinstance(product_revenue, dict):
+        raise ValueError(
+            "Expected a dictionary of product revenues."
+        )
+
+
     if not product_revenue:
         raise ValueError("No product revenue data available")
 
@@ -157,7 +171,7 @@ def search_web(query):
 
     response = client.search(
         query=query,
-        max_results=5
+        max_results=1
     )
 
     results = []

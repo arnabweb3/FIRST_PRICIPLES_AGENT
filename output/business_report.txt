@@ -1,0 +1,10 @@
+Business Report
+
+Overall Revenue:
+{'columns': ['overall_revenue'], 'rows': [(363900.0,)], 'row_count': 1}
+
+Revenue by Product:
+{'columns': ['product', 'total_revenue'], 'rows': [('Keyboard', 10500.0), ('Laptop', 275000.0), ('Monitor', 60000.0), ('Mouse', 18400.0)], 'row_count': 4}
+
+Highest-Revenue Product:
+{'product': 'Laptop', 'revenue': 275000.0}

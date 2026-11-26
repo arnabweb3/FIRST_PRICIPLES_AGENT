@@ -167,11 +167,46 @@ def execute_plan(user_goal):
             }
         )
 
-        result = execute_tool(
-            tool_name=task['tool'],
-            arguments=arguments,
-            tool_registry=TOOL_REGISTRY
-        )
+        tool_name = task["tool"]
+        tool_config = TOOL_REGISTRY[tool_name]
+
+        approved = False
+
+        # Ask for approval before executing restricted tools
+        if tool_config.get("permission") == "restricted":
+
+            print("\n================================")
+            print("USER APPROVAL REQUIRED")
+            print("================================")
+            print("Tool:", tool_name)
+            print("Arguments:", arguments)
+
+            choice = input(
+                "\nDo you approve this operation? (yes/no): "
+            ).strip().lower()
+
+            approved = choice == "yes"
+
+        if tool_config.get("permission") == "restricted" and not approved:
+            result = {
+                "success": False,
+                "tool": tool_name,
+                "result": None,
+                "error": "User denied permission.",
+                "retryable": False
+            }
+        else:
+            result = execute_with_retry(
+                tool_name=tool_name,
+                arguments=arguments,
+                approved=approved
+            )
+
+                # result = execute_tool(
+                #     tool_name=task['tool'],
+                #     arguments=arguments,
+                #     tool_registry=TOOL_REGISTRY
+                # )
 
         if not result['success']:
             failed_tasks.append(
@@ -262,20 +297,36 @@ def execute_with_retry(
         arguments,
         max_attempts = 3,
         base_delay = 1,
-        execute_fn=None
+        execute_fn=None,
+        approved = False
 ):
     if execute_fn is None:
         execute_fn = execute_tool
+
+    def run_tool():
+        if execute_fn is execute_tool:
+            return execute_fn(
+                tool_name=tool_name,
+                arguments=arguments,
+                approved=approved,
+                tool_registry=TOOL_REGISTRY
+            )
+
+        return execute_fn(
+            tool_name=tool_name,
+            arguments=arguments
+        )
     
     
     tool_config = TOOL_REGISTRY[tool_name]
 
     if not tool_config.get("retry_safe", False):
-        return execute_tool(
-            tool_name=tool_name,
-            arguments=arguments,
-            tool_registry=TOOL_REGISTRY
-        )
+        return run_tool()
+        # return execute_tool(
+        #     tool_name=tool_name,
+        #     arguments=arguments,
+        #     tool_registry=TOOL_REGISTRY
+        # )
         
     for attempt in range(1, max_attempts + 1):
 
@@ -293,10 +344,12 @@ def execute_with_retry(
         #     arguments=arguments
         # )
 
-        result = execute_fn(
-            tool_name=tool_name,
-            arguments=arguments
-        )
+        result = run_tool()
+
+        # result = execute_fn(
+        #     tool_name=tool_name,
+        #     arguments=arguments
+        # )
 
         # Stop immediately if successful
         if result["success"]:
